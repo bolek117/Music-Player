@@ -31,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        myListViewForSongs = (ListView) findViewById(R.id.mySongListView);
+        myListViewForSongs = findViewById(R.id.mySongListView);
         runtimePermission();
     }
 
@@ -61,6 +61,9 @@ public class MainActivity extends AppCompatActivity {
     {
         ArrayList<File> arrayList = new ArrayList<>();
         File[] files = file.listFiles();
+
+        if (files == null) return arrayList;
+
         for(File singleFile: files)
         {
             if(singleFile.isDirectory() && !singleFile.isHidden())
@@ -84,14 +87,15 @@ public class MainActivity extends AppCompatActivity {
         items = new String[mySongs.size()];
         for(int i = 0; i < mySongs.size(); i++)
         {
-            items[i] = mySongs.get(i).getName().toString().replace(".mp3","").replace(".wav","");
+            items[i] = mySongs.get(i).getName();
+                    //.toString().replace(".mp3","").replace(".wav","");
         }
 
-        ArrayAdapter<String> myAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1,items);
+        ArrayAdapter<String> myAdapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_list_item_1,
+                items);
+
         myListViewForSongs.setAdapter(myAdapter);
-
-
-
         myListViewForSongs.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
