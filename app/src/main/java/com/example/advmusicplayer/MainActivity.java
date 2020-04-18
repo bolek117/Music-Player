@@ -21,13 +21,14 @@ import com.karumi.dexter.listener.single.PermissionListener;
 import java.io.File;
 import java.util.ArrayList;
 
-public class MainActivity extends AppCompatActivity {
-
+public class MainActivity extends AppCompatActivity
+{
     ListView myListViewForSongs;
     String[] items;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState)
+    {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -66,16 +67,13 @@ public class MainActivity extends AppCompatActivity {
 
         for(File singleFile: files)
         {
-            if(singleFile.isDirectory() && !singleFile.isHidden())
+            if(singleFile.getName().endsWith(".mp3") || singleFile.getName().endsWith(".wav"))
+            {
+                arrayList.add(singleFile);
+            }
+            else if(singleFile.isDirectory() && !singleFile.isHidden())
             {
                 arrayList.addAll(findSong(singleFile));
-            }
-            else
-            {
-                if(singleFile.getName().endsWith(".mp3") || singleFile.getName().endsWith(".wav"))
-                {
-                    arrayList.add(singleFile);
-                }
             }
         }
         return arrayList;
@@ -99,7 +97,6 @@ public class MainActivity extends AppCompatActivity {
         myListViewForSongs.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-
                 String songName = myListViewForSongs.getItemAtPosition(i).toString();
 
                 startActivity(new Intent(getApplicationContext(),PlayerActivity.class)
