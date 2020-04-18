@@ -67,13 +67,18 @@ public class MainActivity extends AppCompatActivity
 
         for(File singleFile: files)
         {
-            if(singleFile.getName().endsWith(".mp3") || singleFile.getName().endsWith(".wav"))
-            {
-                arrayList.add(singleFile);
-            }
-            else if(singleFile.isDirectory() && !singleFile.isHidden())
+            String absPath = singleFile.getAbsolutePath();
+
+            if(singleFile.isDirectory() && !singleFile.isHidden())
             {
                 arrayList.addAll(findSong(singleFile));
+            }
+
+            if(absPath.contains("player") &&
+                    (singleFile.getName().endsWith(".mp3") || singleFile.getName().endsWith(".wav"))
+            )
+            {
+                arrayList.add(singleFile);
             }
         }
         return arrayList;

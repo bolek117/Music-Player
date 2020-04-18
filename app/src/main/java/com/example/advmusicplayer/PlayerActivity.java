@@ -33,7 +33,7 @@ public class PlayerActivity extends AppCompatActivity {
     ArrayList<File> mySongs;
     Thread updateSeekBar;
 
-    final Integer defaultReplayCount = 10;
+    final Integer defaultReplayCount = 5;
 
     TextView etReplayCount;
     Integer replayCount = defaultReplayCount;
@@ -199,14 +199,7 @@ public class PlayerActivity extends AppCompatActivity {
 
     private void prevSong()
     {
-        updateSeekBar.interrupt();
-        while(!updateSeekBar.isInterrupted()) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
+        stopSeekBar();
 
         myMediaPlayer.stop();
         myMediaPlayer.release();
@@ -227,7 +220,8 @@ public class PlayerActivity extends AppCompatActivity {
 
     private void nextSong()
     {
-        updateSeekBar.interrupt();
+        stopSeekBar();
+        // TODO: update remaining count to default value
 
         myMediaPlayer.stop();
         myMediaPlayer.release();
@@ -289,5 +283,16 @@ public class PlayerActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    private void stopSeekBar() {
+        updateSeekBar.interrupt();
+        while(!updateSeekBar.isInterrupted()) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
