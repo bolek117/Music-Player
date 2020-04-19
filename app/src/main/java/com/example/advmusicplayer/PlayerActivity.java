@@ -42,7 +42,6 @@ public class PlayerActivity extends AppCompatActivity {
     final Integer defaultReplayCount = 5;
 
     TextView etReplayCount;
-    Integer replayCount = defaultReplayCount;
 
     TextView etRemainingCount;
     Integer remainingCount = defaultReplayCount;
@@ -61,11 +60,11 @@ public class PlayerActivity extends AppCompatActivity {
         songSeekBar = findViewById(R.id.seekBar);
 
         etReplayCount = findViewById(R.id.etReplayCount);
-        etReplayCount.setText(replayCount.toString());
+        int replayCount = getReplayCount();
+        etReplayCount.setText(String.valueOf(replayCount));
 
         etRemainingCount = findViewById(R.id.etReplayRemaining);
         etRemainingCount.setText(remainingCount.toString());
-
 
         ActionBar supportActionBar = getSupportActionBar();
         if (supportActionBar == null) {
@@ -76,35 +75,28 @@ public class PlayerActivity extends AppCompatActivity {
         supportActionBar.setDisplayHomeAsUpEnabled(true);
         supportActionBar.setDisplayShowHomeEnabled(true);
 
-        updateSeekBar = createUpdateSeekBar();
-
-        if(myMediaPlayer != null)
-        {
-            myMediaPlayer.stop();
-            myMediaPlayer.release();
-        }
+        updateSeekBar = createUpdateSeekBarThread();
 
         Intent i = getIntent();
         Bundle bundle = i.getExtras();
 
+        if (bundle == null) {
+            throw new InvalidParameterException();
+        }
+
+        //noinspection unchecked
         mySongs = (ArrayList) bundle.getParcelableArrayList("songs");
 
-        sname = mySongs.get(position).getName();
+        if (mySongs == null) {
+            throw new InvalidParameterException();
+        }
 
         String songName = i.getStringExtra("songname");
-
         songTextLabel.setText(songName);
         songTextLabel.setSelected(true);
 
         position = bundle.getInt("pos",0);
-
-        Uri u = Uri.parse(mySongs.get(position).toString());
-
-        myMediaPlayer = MediaPlayer.create(getApplicationContext(),u);
-        myMediaPlayer.start();
-        songSeekBar.setMax(myMediaPlayer.getDuration());
-
-        updateSeekBar.start();
+        playSongByPosition(position);
 
         songSeekBar.getProgressDrawable().setColorFilter(getResources().getColor(R.color.colorPrimary), PorterDuff.Mode.MULTIPLY);
         songSeekBar.getThumb().setColorFilter(getResources().getColor(R.color.colorPrimary), PorterDuff.Mode.SRC_IN);
@@ -129,18 +121,7 @@ public class PlayerActivity extends AppCompatActivity {
         btn_pause.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                songSeekBar.setMax(myMediaPlayer.getDuration());
-
-                if(myMediaPlayer.isPlaying())
-                {
-                    btn_pause.setBackgroundResource(R.drawable.icon_play);
-                    myMediaPlayer.pause();
-                }
-                else
-                {
-                    btn_pause.setBackgroundResource(R.drawable.icon_pause);
-                    myMediaPlayer.start();
-                }
+                handlePlayPauseButton(btn_pause);
             }
         });
 
@@ -162,98 +143,115 @@ public class PlayerActivity extends AppCompatActivity {
         etReplayCount.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
             public void onFocusChange(View v, boolean hasFocus) {
-                if (hasFocus) return;
+                if (hasFocus) {
+                    return;
+                }
 
                 EditText input = (EditText)v;
                 Integer parsedValue = ParseIntegerInput(input);
 
-                if (!parsedValue.equals(replayCount)) {
-                    etReplayCount.setText(parsedValue.toString());
+                if (!parsedValue.equals(getReplayCount())) {
+                    setReplayCount(parsedValue);
                     etRemainingCount.setText(parsedValue.toString());
 
-                    replayCount = parsedValue;
-                    updateRemaining(parsedValue);
+                    resetRemaining(parsedValue);
                 }
             }
         });
     }
 
-    private Thread createUpdateSeekBar()
-    {
-        return new Thread()
-        {
+    private void handlePlayPauseButton(Button btn) {
+        songSeekBar.setMax(myMediaPlayer.getDuration());
+
+        if(myMediaPlayer.isPlaying()) {
+            btn.setBackgroundResource(R.drawable.icon_play);
+            myMediaPlayer.pause();
+        } else {
+            btn.setBackgroundResource(R.drawable.icon_pause);
+            myMediaPlayer.start();
+        }
+    }
+
+    private Thread createUpdateSeekBarThread() {
+        // TODO: Fix progress bar initialization
+        return new Thread() {
             @Override
             public void run() {
+                try {
+                    while (myMediaPlayer == null) {
+                        sleep(100);
+                    }
+                } catch (InterruptedException ignored) {}
+
                 int totalDuration = myMediaPlayer.getDuration();
                 int currentpostion = 0;
 
-                while(currentpostion < totalDuration)
-                {
+                while(currentpostion < totalDuration) {
                     try {
                         sleep(500);
-                        currentpostion = myMediaPlayer.getCurrentPosition();
-                        songSeekBar.setProgress(currentpostion);
+
+                        if (myMediaPlayer != null) {
+                            currentpostion = myMediaPlayer.getCurrentPosition();
+                            songSeekBar.setProgress(currentpostion);
+                        }
                     }
-                    catch (InterruptedException e)
-                    {
-                        e.printStackTrace();
-                    }
+                    catch (IllegalStateException ignored) {}
+                    catch (InterruptedException ignored) {}
                 }
             }
         };
     }
 
-    private void prevSong()
-    {
-        stopSeekBar();
-
-        myMediaPlayer.stop();
-        myMediaPlayer.release();
+    private void prevSong() {
         position = ((position - 1) < 0) ? (mySongs.size() - 1) : (position - 1);
-
-        Uri u = Uri.parse(mySongs.get(position).toString());
-        myMediaPlayer = MediaPlayer.create(getApplicationContext(), u);
-
-        sname = mySongs.get(position).getName();
-        songTextLabel.setText(sname);
-
-        myMediaPlayer.start();
-        setListeners();
-
-        updateSeekBar = createUpdateSeekBar();
-        updateSeekBar.start();
+        playSongByPosition(position);
     }
 
-    private void nextSong()
-    {
-        stopSeekBar();
-        // TODO: update remaining count to default value
+    private void nextSong() {
+       position = ((position + 1) % mySongs.size());
+       playSongByPosition(position);
+    }
 
-        myMediaPlayer.stop();
-        myMediaPlayer.release();
-        position = ((position + 1) % mySongs.size());
+    private void playSongByPosition(int position) {
+        if (position < 0) {
+            position = mySongs.size();
+        } else if (position > mySongs.size()) {
+            position = 0;
+        }
 
-        Uri u = Uri.parse(mySongs.get(position).toString());
+        if (updateSeekBar != null) {
+            updateSeekBar.interrupt();
+        }
+
+        if (myMediaPlayer != null) {
+            if (myMediaPlayer.isPlaying()) {
+                myMediaPlayer.stop();
+            }
+
+            myMediaPlayer.release();
+            myMediaPlayer = null;
+        }
+
+        File actualSong = mySongs.get(position);
+        Uri u = Uri.parse(actualSong.toString());
 
         myMediaPlayer = MediaPlayer.create(getApplicationContext(), u);
 
-        sname = mySongs.get(position).getName();
+        sname = actualSong.getName();
         songTextLabel.setText(sname);
 
-        updateRemaining(replayCount);
+        resetRemaining();
 
+        setMediaPlayerListeners();
         myMediaPlayer.start();
-        setListeners();
 
-        updateSeekBar = createUpdateSeekBar();
+        updateSeekBar = createUpdateSeekBarThread();
         updateSeekBar.start();
     }
 
     @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item)
-    {
-        if(item.getItemId() == android.R.id.home)
-        {
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if(item.getItemId() == android.R.id.home) {
             onBackPressed();
         }
 
@@ -271,17 +269,26 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     @SuppressLint("SetTextI18n")
-    private void updateRemaining(int count) {
+    private void resetRemaining(int count) {
         remainingCount = count;
         etRemainingCount.setText(remainingCount.toString());
     }
 
+    private void resetRemaining() {
+        int count = getReplayCount()-1;
+        resetRemaining(count);
+    }
+
     private void setReplayCount(int count) {
-        if (count < 1 || count > 100) throw new InvalidParameterException();
+        if (count < 1 || count > 100) {
+            throw new InvalidParameterException();
+        }
 
         SharedPreferences.Editor editor = getSharedPreferences(PREF_REPLAY, MODE_PRIVATE).edit();
         editor.putInt(PREF_REPLAY_REPLAY_COUNT, count);
         editor.apply();
+
+        etReplayCount.setText(String.valueOf(count));
     }
 
     private int getReplayCount() {
@@ -289,35 +296,21 @@ public class PlayerActivity extends AppCompatActivity {
 
         @SuppressWarnings("UnnecessaryLocalVariable")
         int count = preferences.getInt(PREF_REPLAY_REPLAY_COUNT, defaultReplayCount);
-
         return count;
     }
 
-    private void setListeners() {
+    private void setMediaPlayerListeners() {
         myMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(MediaPlayer mp) {
                 if (remainingCount-- > 0) {
-                    updateRemaining(remainingCount);
-                    mp.seekTo(1);
+                    resetRemaining(remainingCount);
                     mp.start();
                 } else {
-                    remainingCount = replayCount;
-                    updateRemaining(remainingCount);
+                    remainingCount = getReplayCount();
                     nextSong();
                 }
             }
         });
-    }
-
-    private void stopSeekBar() {
-        updateSeekBar.interrupt();
-        while(!updateSeekBar.isInterrupted()) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
     }
 }
