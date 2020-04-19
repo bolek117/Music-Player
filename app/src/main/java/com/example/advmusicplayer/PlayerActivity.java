@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.PorterDuff;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -19,14 +20,19 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import java.io.File;
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
 
 public class PlayerActivity extends AppCompatActivity {
+    private static final String PREF_REPLAY = "PREF_REPLAY";
+    private static final String PREF_REPLAY_REPLAY_COUNT = "PREF_REPLAY-REPLAY_COUNT";
+
     Button btn_next, btn_previous, btn_pause;
     TextView songTextLabel;
     SeekBar songSeekBar;
 
     static MediaPlayer myMediaPlayer;
+
     int position;
     String sname;
 
@@ -166,7 +172,7 @@ public class PlayerActivity extends AppCompatActivity {
                     etRemainingCount.setText(parsedValue.toString());
 
                     replayCount = parsedValue;
-                    updateRemainingCount(parsedValue);
+                    updateRemaining(parsedValue);
                 }
             }
         });
@@ -234,6 +240,8 @@ public class PlayerActivity extends AppCompatActivity {
         sname = mySongs.get(position).getName();
         songTextLabel.setText(sname);
 
+        updateRemaining(replayCount);
+
         myMediaPlayer.start();
         setListeners();
 
@@ -263,9 +271,26 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     @SuppressLint("SetTextI18n")
-    private void updateRemainingCount(int count) {
+    private void updateRemaining(int count) {
         remainingCount = count;
         etRemainingCount.setText(remainingCount.toString());
+    }
+
+    private void setReplayCount(int count) {
+        if (count < 1 || count > 100) throw new InvalidParameterException();
+
+        SharedPreferences.Editor editor = getSharedPreferences(PREF_REPLAY, MODE_PRIVATE).edit();
+        editor.putInt(PREF_REPLAY_REPLAY_COUNT, count);
+        editor.apply();
+    }
+
+    private int getReplayCount() {
+        SharedPreferences preferences = getSharedPreferences(PREF_REPLAY, MODE_PRIVATE);
+
+        @SuppressWarnings("UnnecessaryLocalVariable")
+        int count = preferences.getInt(PREF_REPLAY_REPLAY_COUNT, defaultReplayCount);
+
+        return count;
     }
 
     private void setListeners() {
@@ -273,12 +298,12 @@ public class PlayerActivity extends AppCompatActivity {
             @Override
             public void onCompletion(MediaPlayer mp) {
                 if (remainingCount-- > 0) {
-                    updateRemainingCount(remainingCount);
+                    updateRemaining(remainingCount);
                     mp.seekTo(1);
                     mp.start();
                 } else {
                     remainingCount = replayCount;
-                    updateRemainingCount(remainingCount);
+                    updateRemaining(remainingCount);
                     nextSong();
                 }
             }
