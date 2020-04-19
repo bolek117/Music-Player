@@ -19,45 +19,61 @@
             android:layout_height="250dp"
             android:src="@drawable/cover_art"
             android:id="@+id/album_art" />
+
         <TextView
             android:id="@+id/songLabel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="song name"
-            android:singleLine="true"
-            android:marqueeRepeatLimit="marquee_forever"
             android:layout_marginTop="20dp"
-            android:textSize="22sp"
-            android:textAlignment="center"
             android:ellipsize="marquee"
+            android:gravity="center_horizontal"
+            android:marqueeRepeatLimit="marquee_forever"
             android:scrollHorizontally="true"
-            android:textColor="@color/colorPrimary"
-            android:gravity="center_horizontal" />
+            android:singleLine="true"
+            android:text="song name"
+            android:textAlignment="center"
+            android:textColor="#000000"
+            android:textSize="22sp" />
     </LinearLayout>
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="4"
         android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvReplayCount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="Replay count: " />
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_marginBottom="5dp"
             android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnDecrementReplayCount"
+                android:layout_width="50dp"
+                android:layout_height="wrap_content"
+                android:text="-" />
+
             <TextView
-                android:id="@+id/tvReplayCount"
+                android:id="@+id/tbReplayCount"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Replay count: " />
-            <EditText
-                android:id="@+id/etReplayCount"
-                android:layout_width="wrap_content"
+                android:layout_weight="1"
+                android:paddingLeft="5dp"
+                android:paddingRight="5dp"
+                android:text="-1" />
+
+            <Button
+                android:id="@+id/btnIncrementReplayCount"
+                android:layout_width="50dp"
                 android:layout_height="wrap_content"
-                android:ems="2"
-                android:inputType="numberDecimal"
-                android:singleLine="true"
-                android:focusableInTouchMode="true" />
+                android:text="+" />
         </LinearLayout>
         <LinearLayout
             android:layout_width="wrap_content"

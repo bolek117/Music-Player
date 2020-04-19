@@ -26,25 +26,28 @@ import java.util.ArrayList;
 public class PlayerActivity extends AppCompatActivity {
     private static final String PREF_REPLAY = "PREF_REPLAY";
     private static final String PREF_REPLAY_REPLAY_COUNT = "PREF_REPLAY-REPLAY_COUNT";
+    private static final Integer DEFAULT_REPLAY_COUNT = 5;
+
+    static MediaPlayer myMediaPlayer;
 
     Button btn_next, btn_previous, btn_pause;
     TextView songTextLabel;
     SeekBar songSeekBar;
 
-    static MediaPlayer myMediaPlayer;
+    // TODO: Hand;e TV
+    TextView tvReplayCount;
+    TextView tvRemainingCount;
+
+    // TODO: Handle buttons
+    Button btnIncrementReplayCount;
+    Button btnDecrementReplayCount;
 
     int position;
+    int remainingCount;
     String sname;
 
     ArrayList<File> mySongs;
     Thread updateSeekBar;
-
-    final Integer defaultReplayCount = 5;
-
-    TextView etReplayCount;
-
-    TextView etRemainingCount;
-    Integer remainingCount = defaultReplayCount;
 
     @SuppressLint("SetTextI18n")
     @Override
@@ -59,12 +62,12 @@ public class PlayerActivity extends AppCompatActivity {
         songTextLabel = findViewById(R.id.songLabel);
         songSeekBar = findViewById(R.id.seekBar);
 
-        etReplayCount = findViewById(R.id.etReplayCount);
         int replayCount = getReplayCount();
-        etReplayCount.setText(String.valueOf(replayCount));
+        tvReplayCount.setText(String.valueOf(replayCount));
+        setRemaining();
 
-        etRemainingCount = findViewById(R.id.etReplayRemaining);
-        etRemainingCount.setText(remainingCount.toString());
+        tvRemainingCount = findViewById(R.id.etReplayRemaining);
+        tvRemainingCount.setText(String.valueOf(remainingCount));
 
         ActionBar supportActionBar = getSupportActionBar();
         if (supportActionBar == null) {
@@ -140,7 +143,7 @@ public class PlayerActivity extends AppCompatActivity {
             }
         });
 
-        etReplayCount.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+        tvReplayCount.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
             public void onFocusChange(View v, boolean hasFocus) {
                 if (hasFocus) {
@@ -152,9 +155,9 @@ public class PlayerActivity extends AppCompatActivity {
 
                 if (!parsedValue.equals(getReplayCount())) {
                     setReplayCount(parsedValue);
-                    etRemainingCount.setText(parsedValue.toString());
+                    tvRemainingCount.setText(parsedValue.toString());
 
-                    resetRemaining(parsedValue);
+                    setRemaining(parsedValue);
                 }
             }
         });
@@ -240,7 +243,7 @@ public class PlayerActivity extends AppCompatActivity {
         sname = actualSong.getName();
         songTextLabel.setText(sname);
 
-        resetRemaining();
+        setRemaining();
 
         setMediaPlayerListeners();
         myMediaPlayer.start();
@@ -262,21 +265,21 @@ public class PlayerActivity extends AppCompatActivity {
         Editable value = et.getText();
         try {
             int parsed = Integer.parseInt(value.toString());
-            return (parsed < 1 || parsed > 100) ? defaultReplayCount : parsed;
+            return (parsed < 1 || parsed > 100) ? DEFAULT_REPLAY_COUNT : parsed;
         } catch (NumberFormatException e) {
-            return defaultReplayCount;
+            return DEFAULT_REPLAY_COUNT;
         }
     }
 
     @SuppressLint("SetTextI18n")
-    private void resetRemaining(int count) {
+    private void setRemaining(int count) {
         remainingCount = count;
-        etRemainingCount.setText(remainingCount.toString());
+        tvRemainingCount.setText(String.valueOf(remainingCount));
     }
 
-    private void resetRemaining() {
+    private void setRemaining() {
         int count = getReplayCount()-1;
-        resetRemaining(count);
+        setRemaining(count);
     }
 
     private void setReplayCount(int count) {
@@ -288,14 +291,14 @@ public class PlayerActivity extends AppCompatActivity {
         editor.putInt(PREF_REPLAY_REPLAY_COUNT, count);
         editor.apply();
 
-        etReplayCount.setText(String.valueOf(count));
+        tvReplayCount.setText(String.valueOf(count));
     }
 
     private int getReplayCount() {
         SharedPreferences preferences = getSharedPreferences(PREF_REPLAY, MODE_PRIVATE);
 
         @SuppressWarnings("UnnecessaryLocalVariable")
-        int count = preferences.getInt(PREF_REPLAY_REPLAY_COUNT, defaultReplayCount);
+        int count = preferences.getInt(PREF_REPLAY_REPLAY_COUNT, DEFAULT_REPLAY_COUNT);
         return count;
     }
 
@@ -304,7 +307,7 @@ public class PlayerActivity extends AppCompatActivity {
             @Override
             public void onCompletion(MediaPlayer mp) {
                 if (remainingCount-- > 0) {
-                    resetRemaining(remainingCount);
+                    setRemaining(remainingCount);
                     mp.start();
                 } else {
                     remainingCount = getReplayCount();
