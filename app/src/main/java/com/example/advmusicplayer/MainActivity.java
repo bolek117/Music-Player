@@ -1,7 +1,5 @@
 package com.example.advmusicplayer;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.Manifest;
 import android.content.Intent;
 import android.os.Bundle;
@@ -11,6 +9,9 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.advmusicplayer.constans.Values;
 import com.karumi.dexter.Dexter;
 import com.karumi.dexter.PermissionToken;
 import com.karumi.dexter.listener.PermissionDeniedResponse;
@@ -87,6 +88,8 @@ public class MainActivity extends AppCompatActivity
     void display()
     {
         final ArrayList<File> mySongs = findSong(Environment.getExternalStorageDirectory());
+        addResumeElement(mySongs);
+
         items = new String[mySongs.size()];
         for(int i = 0; i < mySongs.size(); i++)
         {
@@ -104,10 +107,31 @@ public class MainActivity extends AppCompatActivity
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 String songName = myListViewForSongs.getItemAtPosition(i).toString();
 
-                startActivity(new Intent(getApplicationContext(),PlayerActivity.class)
-                .putExtra("songs",mySongs).putExtra("songname",songName)
-                .putExtra("pos",i));
+                @SuppressWarnings("unchecked")
+                ArrayList<File> songs = new ArrayList(mySongs.subList(1, mySongs.size()));
+
+                if (i == 0) {
+                    startActivity(new Intent(getApplicationContext(), PlayerActivity.class)
+                            .putExtra("mode", Values.RESUME_LAST_SONG)
+                            .putExtra("songs", songs)
+                    );
+                } else {
+                    startActivity(new Intent(getApplicationContext(), PlayerActivity.class)
+                            .putExtra("songs", songs)
+                            .putExtra("songname", songName)
+                            .putExtra("pos", i-1)
+                    );
+                }
             }
         });
+    }
+
+    private void addResumeElement(ArrayList<File> songs) {
+        if (songs.size() == 0) {
+            return;
+        }
+
+        File resumePlaceholder = new File("Resume where I stopped...");
+        songs.add(0, resumePlaceholder);
     }
 }

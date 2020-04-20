@@ -1,9 +1,5 @@
 package com.example.advmusicplayer;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -19,6 +15,13 @@ import android.widget.EditText;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.advmusicplayer.constans.Values;
+import com.example.advmusicplayer.persistence.LastPlayed;
+
 import java.io.File;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
@@ -27,6 +30,7 @@ public class PlayerActivity extends AppCompatActivity {
     private static final String PREF_REPLAY = "PREF_REPLAY";
     private static final String PREF_REPLAY_REPLAY_COUNT = "PREF_REPLAY-REPLAY_COUNT";
     private static final Integer DEFAULT_REPLAY_COUNT = 5;
+    private static final String TAG = "PlayerActivity";
 
     static MediaPlayer myMediaPlayer;
 
@@ -82,11 +86,13 @@ public class PlayerActivity extends AppCompatActivity {
             throw new InvalidParameterException();
         }
 
-        String songName = i.getStringExtra("songname");
-        songTextLabel.setText(songName);
-        songTextLabel.setSelected(true);
+        String playMode = i.getStringExtra("mode");
+        if (playMode != null && playMode.equals(Values.RESUME_LAST_SONG)) {
+            position = getLastPlayedPosition();
+        } else {
+            position = bundle.getInt("pos",0);
+        }
 
-        position = bundle.getInt("pos",0);
         playSongByPosition(position);
 
         songSeekBar.getProgressDrawable().setColorFilter(getResources().getColor(R.color.colorPrimary), PorterDuff.Mode.MULTIPLY);
@@ -144,6 +150,23 @@ public class PlayerActivity extends AppCompatActivity {
                 setReplayCount(getReplayCount() - 1);
             }
         });
+    }
+
+    private int getLastPlayedPosition() {
+        String lastPlayed = LastPlayed.getLastPlayedName(this);
+        if (lastPlayed.length() == 0 || lastPlayed.equals(Values.RESUME_LAST_SONG)) {
+            return 0;
+        }
+
+        for(int i = 0; i < mySongs.size(); i++) {
+            File file = mySongs.get(i);
+
+            if (file.getName().equals(lastPlayed)) {
+                return i;
+            }
+        }
+
+        return 0;
     }
 
     private void findUiViews() {
@@ -214,7 +237,7 @@ public class PlayerActivity extends AppCompatActivity {
 
     private void playSongByPosition(int position) {
         if (position < 0) {
-            position = mySongs.size();
+            position = mySongs.size()-1;
         } else if (position > mySongs.size()) {
             position = 0;
         }
@@ -236,13 +259,16 @@ public class PlayerActivity extends AppCompatActivity {
         Uri u = Uri.parse(actualSong.toString());
 
         myMediaPlayer = MediaPlayer.create(getApplicationContext(), u);
+        setMediaPlayerListeners();
 
         sname = actualSong.getName();
         songTextLabel.setText(sname);
+        songTextLabel.setSelected(true);
+
+        LastPlayed.saveLastPlayed(sname, this);
 
         resetRemaining();
 
-        setMediaPlayerListeners();
         myMediaPlayer.start();
         songSeekBar.setMax(myMediaPlayer.getDuration());
 
