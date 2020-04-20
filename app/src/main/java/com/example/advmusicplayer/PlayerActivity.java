@@ -34,11 +34,9 @@ public class PlayerActivity extends AppCompatActivity {
     TextView songTextLabel;
     SeekBar songSeekBar;
 
-    // TODO: Hand;e TV
     TextView tvReplayCount;
     TextView tvRemainingCount;
 
-    // TODO: Handle buttons
     Button btnIncrementReplayCount;
     Button btnDecrementReplayCount;
 
@@ -55,19 +53,9 @@ public class PlayerActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_player);
 
-        btn_next = findViewById(R.id.next);
-        btn_previous = findViewById(R.id.previous);
-        btn_pause = findViewById(R.id.pause);
+        findUiViews();
 
-        songTextLabel = findViewById(R.id.songLabel);
-        songSeekBar = findViewById(R.id.seekBar);
-
-        int replayCount = getReplayCount();
-        tvReplayCount.setText(String.valueOf(replayCount));
-        setRemaining();
-
-        tvRemainingCount = findViewById(R.id.etReplayRemaining);
-        tvRemainingCount.setText(String.valueOf(remainingCount));
+        resetReplayCount();
 
         ActionBar supportActionBar = getSupportActionBar();
         if (supportActionBar == null) {
@@ -143,24 +131,34 @@ public class PlayerActivity extends AppCompatActivity {
             }
         });
 
-        tvReplayCount.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+        btnIncrementReplayCount.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onFocusChange(View v, boolean hasFocus) {
-                if (hasFocus) {
-                    return;
-                }
-
-                EditText input = (EditText)v;
-                Integer parsedValue = ParseIntegerInput(input);
-
-                if (!parsedValue.equals(getReplayCount())) {
-                    setReplayCount(parsedValue);
-                    tvRemainingCount.setText(parsedValue.toString());
-
-                    setRemaining(parsedValue);
-                }
+            public void onClick(View v) {
+                setReplayCount(getReplayCount() + 1);
             }
         });
+
+        btnDecrementReplayCount.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                setReplayCount(getReplayCount() - 1);
+            }
+        });
+    }
+
+    private void findUiViews() {
+        btn_next = findViewById(R.id.next);
+        btn_previous = findViewById(R.id.previous);
+        btn_pause = findViewById(R.id.pause);
+
+        btnIncrementReplayCount = findViewById(R.id.btnIncrementReplayCount);
+        btnDecrementReplayCount = findViewById(R.id.btnDecrementReplayCount);
+
+        songTextLabel = findViewById(R.id.songLabel);
+        songSeekBar = findViewById(R.id.seekBar);
+
+        tvReplayCount = findViewById(R.id.tvReplayCount);
+        tvRemainingCount = findViewById(R.id.etReplayRemaining);
     }
 
     private void handlePlayPauseButton(Button btn) {
@@ -176,7 +174,6 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     private Thread createUpdateSeekBarThread() {
-        // TODO: Fix progress bar initialization
         return new Thread() {
             @Override
             public void run() {
@@ -243,10 +240,11 @@ public class PlayerActivity extends AppCompatActivity {
         sname = actualSong.getName();
         songTextLabel.setText(sname);
 
-        setRemaining();
+        resetRemaining();
 
         setMediaPlayerListeners();
         myMediaPlayer.start();
+        songSeekBar.setMax(myMediaPlayer.getDuration());
 
         updateSeekBar = createUpdateSeekBarThread();
         updateSeekBar.start();
@@ -273,25 +271,35 @@ public class PlayerActivity extends AppCompatActivity {
 
     @SuppressLint("SetTextI18n")
     private void setRemaining(int count) {
+        // TODO: What if count is < 0 or > replayCount?
         remainingCount = count;
         tvRemainingCount.setText(String.valueOf(remainingCount));
     }
 
-    private void setRemaining() {
+    private void resetRemaining() {
         int count = getReplayCount()-1;
         setRemaining(count);
     }
 
     private void setReplayCount(int count) {
-        if (count < 1 || count > 100) {
-            throw new InvalidParameterException();
+        if (count < 1) {
+            count = 1;
+        } else if (count > 100) {
+            count = 100;
         }
 
         SharedPreferences.Editor editor = getSharedPreferences(PREF_REPLAY, MODE_PRIVATE).edit();
         editor.putInt(PREF_REPLAY_REPLAY_COUNT, count);
         editor.apply();
 
-        tvReplayCount.setText(String.valueOf(count));
+        resetReplayCount();
+    }
+
+    private void resetReplayCount() {
+        int replayCount = getReplayCount();
+        tvReplayCount.setText(String.valueOf(replayCount));
+
+        resetRemaining();
     }
 
     private int getReplayCount() {
