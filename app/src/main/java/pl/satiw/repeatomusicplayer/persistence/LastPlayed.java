@@ -1,4 +1,4 @@
-package com.example.advmusicplayer.persistence;
+package pl.satiw.repeatomusicplayer.persistence;
 
 import android.app.Activity;
 import android.content.Context;

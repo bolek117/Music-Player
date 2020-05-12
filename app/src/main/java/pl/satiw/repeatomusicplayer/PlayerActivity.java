@@ -1,4 +1,4 @@
-package com.example.advmusicplayer;
+package pl.satiw.repeatomusicplayer;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
@@ -19,12 +19,15 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.advmusicplayer.constans.Values;
-import com.example.advmusicplayer.persistence.LastPlayed;
+import com.example.repeatomusicplayer.R;
 
 import java.io.File;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
+
+import pl.satiw.repeatomusicplayer.constans.Values;
+import pl.satiw.repeatomusicplayer.errors.CustomExceptionHandler;
+import pl.satiw.repeatomusicplayer.persistence.LastPlayed;
 
 public class PlayerActivity extends AppCompatActivity {
     private static final String PREF_REPLAY = "PREF_REPLAY";
@@ -65,6 +68,8 @@ public class PlayerActivity extends AppCompatActivity {
         if (supportActionBar == null) {
             return;
         }
+
+        registerUncaughtExceptionHandler();
 
         supportActionBar.setTitle("Now Playing");
         supportActionBar.setDisplayHomeAsUpEnabled(true);
@@ -150,6 +155,13 @@ public class PlayerActivity extends AppCompatActivity {
                 setReplayCount(getReplayCount() - 1);
             }
         });
+    }
+
+    private void registerUncaughtExceptionHandler() {
+        Thread.UncaughtExceptionHandler defaultUEH = Thread.getDefaultUncaughtExceptionHandler();
+        if (!(defaultUEH instanceof CustomExceptionHandler)) {
+            Thread.setDefaultUncaughtExceptionHandler(new CustomExceptionHandler(defaultUEH));
+        }
     }
 
     private int getLastPlayedPosition() {

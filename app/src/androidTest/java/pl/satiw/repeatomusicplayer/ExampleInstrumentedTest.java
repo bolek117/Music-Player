@@ -1,4 +1,4 @@
-package com.example.advmusicplayer;
+package pl.satiw.repeatomusicplayer;
 
 import android.content.Context;
 
