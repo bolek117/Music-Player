@@ -297,7 +297,12 @@ public class PlayerActivity extends AppCompatActivity {
 
     @SuppressLint("SetTextI18n")
     private void setRemaining(int count) {
-        // TODO: What if count is < 0 or > replayCount?
+        if (count < 0) {
+            count = 0;
+        } else if (count > this.getReplayCount()) {
+            count = this.getReplayCount();
+        }
+
         remainingCount = count;
         tvRemainingCount.setText(String.valueOf(remainingCount));
     }
