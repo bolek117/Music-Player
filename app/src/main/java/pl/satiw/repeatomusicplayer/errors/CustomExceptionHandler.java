@@ -30,7 +30,7 @@ public class CustomExceptionHandler implements Thread.UncaughtExceptionHandler {
         String time = new Date(System.currentTimeMillis()).toString();
         String message = ex.getMessage();
 
-        String filename = "error_log_repeato" + time + ".txt";
+        String filename = "error_log_repeato_" + time + ".txt";
 
         String text = message + '\n' + stackTrace;
         if (saveExceptionDetails(filename, text)) {
@@ -39,6 +39,8 @@ public class CustomExceptionHandler implements Thread.UncaughtExceptionHandler {
     }
 
     private boolean saveExceptionDetails(String filename, String text) {
+        String filenameRegex = "[^a-zA-Z0-9.]+";
+        filename = filename.replaceAll(filenameRegex, "_");
         File baseDir = Environment.getExternalStorageDirectory();
         String logPath = baseDir.toString() + File.separatorChar +  filename;
 
